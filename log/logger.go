@@ -11,7 +11,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
-	"micode.be.xiaomi.com/golib/milog"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -20,14 +19,14 @@ import (
 )
 
 // SysLog 系统Log
-var SysLog *Logger = nil
+var SysLog *ProxyLogger = nil
 
 // AppLog 应用Log
-var AppLog *Logger = nil
+var AppLog *ProxyLogger = nil
 
-// Logger the milog.Logger wrapper
-type Logger struct {
-	l *milog.Logger
+// Logger the log.Logger wrapper
+type ProxyLogger struct {
+	l *Logger
 }
 
 func logidGenerator() string {
@@ -62,22 +61,22 @@ func comMessage(strfmt string, args ...interface{}) map[string]string {
 }
 
 // Notice print notice message to logfile
-func (lg *Logger) Notice(strfmt string, args ...interface{}) {
+func (lg *ProxyLogger) Notice(strfmt string, args ...interface{}) {
 	lg.l.Notice(comMessage(strfmt, args...), logidGenerator())
 }
 
 // Debug print debug message to logfile
-func (lg *Logger) Debug(strfmt string, args ...interface{}) {
+func (lg *ProxyLogger) Debug(strfmt string, args ...interface{}) {
 	lg.l.Debug(comMessage(strfmt, args...), logidGenerator())
 }
 
 // Warn print warning message to logfile
-func (lg *Logger) Warn(strfmt string, args ...interface{}) {
+func (lg *ProxyLogger) Warn(strfmt string, args ...interface{}) {
 	lg.l.Warn(comMessage(strfmt, args...), logidGenerator())
 }
 
 // Fatal print fatal message to logfile
-func (lg *Logger) Fatal(strfmt string, args ...interface{}) {
+func (lg *ProxyLogger) Fatal(strfmt string, args ...interface{}) {
 	lg.l.Fatal(comMessage(strfmt, args...), logidGenerator())
 }
 
@@ -103,14 +102,14 @@ func Init(syslog, applog *Config) {
 }
 
 func realInit(syslog, applog *Config) {
-	SysLog = &Logger{
-		l: milog.NewLogger(syslog.FilePath),
+	SysLog = &ProxyLogger{
+		l: NewLogger(syslog.FilePath),
 	}
 	SysLog.l.SetLevel(syslog.LogLevel)
 	SysLog.l.SetAppTag(defaultAppTag())
 
-	AppLog = &Logger{
-		l: milog.NewLogger(applog.FilePath),
+	AppLog = &ProxyLogger{
+		l: NewLogger(applog.FilePath),
 	}
 	AppLog.l.SetLevel(applog.LogLevel)
 	AppLog.l.SetAppTag(defaultAppTag())
