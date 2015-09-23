@@ -14,6 +14,7 @@ type Schema struct {
 func (s *Server) parseSchemas() error {
 	s.schemas = make(map[string]*Schema)
 
+	fmt.Println("the schemaCfg: ", s.cfg)
 	for _, schemaCfg := range s.cfg.Schemas {
 		if _, ok := s.schemas[schemaCfg.DB]; ok {
 			return fmt.Errorf("duplicate schema [%s].", schemaCfg.DB)

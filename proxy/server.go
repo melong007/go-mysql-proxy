@@ -4,8 +4,17 @@ import (
 	"github.com/wangjild/go-mysql-proxy/config"
 	. "github.com/wangjild/go-mysql-proxy/log"
 	"net"
+	"sync"
 	//	"runtime"
 )
+
+type LimitReqNode struct {
+	excess     int64
+	last       int64
+	query      string
+	count      int64
+	lastSecond int64 //Last second to refresh the excess?
+}
 
 type Server struct {
 	cfg *config.Config
@@ -22,6 +31,10 @@ type Server struct {
 
 	schemas map[string]*Schema
 
+	fingerprints map[string]*LimitReqNode
+
+	mu *sync.Mutex
+
 	users *userAuth
 }
 
@@ -33,6 +46,9 @@ func NewServer(cfg *config.Config) (*Server, error) {
 	s.addr = cfg.Addr
 	s.user = cfg.User
 	s.password = cfg.Password
+
+	s.fingerprints = make(map[string]*LimitReqNode)
+	s.mu = &sync.Mutex{}
 
 	if err := s.parseNodes(); err != nil {
 		return nil, err

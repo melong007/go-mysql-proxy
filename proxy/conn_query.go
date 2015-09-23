@@ -2,11 +2,19 @@ package proxy
 
 import (
 	"fmt"
+	"time"
+
+	"github.com/melong007/go-mysql/query"
 	"github.com/wangjild/go-mysql-proxy/client"
 	"github.com/wangjild/go-mysql-proxy/hack"
 	. "github.com/wangjild/go-mysql-proxy/mysql"
 	"github.com/wangjild/go-mysql-proxy/sql"
 )
+
+//we just go the microsecond timestamp
+func getTimestamp() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
+}
 
 func (c *Conn) handleQuery(sqlstmt string) (err error) {
 	/*defer func() {
@@ -17,6 +25,46 @@ func (c *Conn) handleQuery(sqlstmt string) (err error) {
 	}()*/
 
 	var stmt sql.IStatement
+	var excess int64
+
+	fp := query.Fingerprint(sqlstmt)
+	now := getTimestamp()
+
+	c.server.mu.Lock()
+	if lr, ok := c.server.fingerprints[fp]; ok {
+		//how many microsecond elapsed since last query
+		ms := now - lr.last
+		//Default, we have 1 r/s
+		excess = lr.excess - c.server.cfg.ReqRate*(ms/1000) + 1000
+
+		//If we need caculate every second speed,
+		//Shouldn't reset to zero;
+		if excess < 0 {
+			excess = 0
+		}
+
+		//the race out the max Burst?
+		if excess > c.server.cfg.ReqBurst {
+			//Just close the client or
+			return fmt.Errorf(`the query excess(%d) over the reqBurst(%d), sql: %s "`, excess, c.server.cfg.ReqBurst, sqlstmt)
+
+			//TODO: more gracefully add a Timer and retry?
+		}
+		lr.excess = excess
+		lr.last = now
+		lr.count++
+
+	} else {
+		lr := &LimitReqNode{}
+		lr.excess = 0
+		lr.last = getTimestamp()
+		lr.query = fp
+
+		lr.count = 1
+		c.server.fingerprints[fp] = lr
+	}
+	c.server.mu.Unlock()
+
 	stmt, err = sql.Parse(sqlstmt)
 	if err != nil {
 		return fmt.Errorf(`parse sql "%s" error "%s"`, sqlstmt, err.Error())

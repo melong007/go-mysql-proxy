@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"github.com/wangjild/go-mysql-proxy/config"
 	. "github.com/wangjild/go-mysql-proxy/log"
 	"github.com/wangjild/go-mysql-proxy/proxy"
@@ -32,6 +33,8 @@ func main() {
 		SysLog.Fatal(err.Error())
 		return
 	}
+
+	fmt.Println("the config : ", cfg)
 
 	//Init(&Config{FilePath: *logFile, LogLevel: *logLevel},
 	//	&Config{FilePath: *logFile, LogLevel: *logLevel})
