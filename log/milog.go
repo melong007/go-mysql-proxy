@@ -35,6 +35,16 @@ type Logger struct {
 	lock     *sync.Mutex
 }
 
+func GetLogLevelFromString(ls string) (level int) {
+	for i := range Level {
+		if Level[i] == strings.ToUpper(ls) {
+			return i
+		}
+	}
+	//Default return the Min Level
+	return LevelTrace
+}
+
 // NewLogger return a Logger instance,
 // the params is filename and apptag is optional
 func NewLogger(filename string, apptag ...string) *Logger {

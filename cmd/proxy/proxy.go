@@ -2,9 +2,8 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"github.com/wangjild/go-mysql-proxy/config"
-	. "github.com/wangjild/go-mysql-proxy/log"
+	"github.com/wangjild/go-mysql-proxy/log"
 	"github.com/wangjild/go-mysql-proxy/proxy"
 	"net/http"
 	_ "net/http/pprof"
@@ -24,25 +23,28 @@ func main() {
 	flag.Parse()
 
 	if len(*configFile) == 0 {
-		SysLog.Fatal("must use a config file")
+		log.SysLog.Fatal("must use a config file")
 		return
 	}
 
 	cfg, err := config.ParseConfigFile(*configFile)
 	if err != nil {
-		SysLog.Fatal(err.Error())
+		log.SysLog.Fatal(err.Error())
 		return
 	}
 
-	fmt.Println("the config : ", cfg)
-
-	//Init(&Config{FilePath: *logFile, LogLevel: *logLevel},
+	//log.Init(&log.Config{FilePath: cfg.LogFile, LogLevel: *logLevel},
 	//	&Config{FilePath: *logFile, LogLevel: *logLevel})
+
+	// ***** Init the log from the config file ****** //
+	//Default all the SysLog and AppLog are direct to the Same log File;
+	log.Init(&log.Config{FilePath: *logFile, LogLevel: 0},
+		&log.Config{FilePath: *logFile, LogLevel: log.GetLogLevelFromString(cfg.LogLevel)})
 
 	var svr *proxy.Server
 	svr, err = proxy.NewServer(cfg)
 	if err != nil {
-		SysLog.Fatal(err.Error())
+		log.SysLog.Fatal(err.Error())
 		return
 	}
 
@@ -59,7 +61,7 @@ func main() {
 
 	go func() {
 		sig := <-sc
-		SysLog.Notice("Got signal [%d] to exit.", sig)
+		log.SysLog.Notice("Got signal [%d] to exit.", sig)
 		svr.Close()
 	}()
 

@@ -7,6 +7,7 @@ import (
 	"github.com/melong007/go-mysql/query"
 	"github.com/wangjild/go-mysql-proxy/client"
 	"github.com/wangjild/go-mysql-proxy/hack"
+	"github.com/wangjild/go-mysql-proxy/log"
 	. "github.com/wangjild/go-mysql-proxy/mysql"
 	"github.com/wangjild/go-mysql-proxy/sql"
 )
@@ -38,16 +39,18 @@ func (c *Conn) handleQuery(sqlstmt string) (err error) {
 		excess = lr.excess - c.server.cfg.ReqRate*(ms/1000) + 1000
 
 		//If we need caculate every second speed,
-		//Shouldn't reset to zero;
+		//Should reset to zero;
 		if excess < 0 {
 			excess = 0
 		}
 
 		//the race out the max Burst?
+		log.AppLog.Notice("the Query excess(%d), the reqBurst(%d)", excess, c.server.cfg.ReqBurst)
 		if excess > c.server.cfg.ReqBurst {
+
+			c.server.mu.Unlock()
 			//Just close the client or
 			return fmt.Errorf(`the query excess(%d) over the reqBurst(%d), sql: %s "`, excess, c.server.cfg.ReqBurst, sqlstmt)
-
 			//TODO: more gracefully add a Timer and retry?
 		}
 		lr.excess = excess

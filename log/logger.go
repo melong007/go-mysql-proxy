@@ -89,7 +89,7 @@ type Config struct {
 
 func init() {
 	realInit(&Config{FilePath: "/dev/stdout", LogLevel: 0},
-		&Config{FilePath: "/dev/stdout", LogLevel: 0})
+		&Config{FilePath: "/dev/stdout", LogLevel: 3})
 }
 
 var once sync.Once

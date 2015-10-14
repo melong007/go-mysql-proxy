@@ -34,6 +34,8 @@ type Config struct {
 	User     string `yaml:"user"`
 	Password string `yaml:"password"`
 	LogLevel string `yaml:"log_level"`
+	ReqRate  int64  `yaml:"rate"`
+	ReqBurst int64  `yaml:"burst"`
 
 	Nodes []NodeConfig `yaml:"nodes"`
 
@@ -44,6 +46,16 @@ func ParseConfigData(data []byte) (*Config, error) {
 	var cfg Config
 	if err := yaml.Unmarshal([]byte(data), &cfg); err != nil {
 		return nil, err
+	}
+
+	if cfg.ReqRate > 0 {
+		/* integer value, 1 corresponds to 0.001 r/s */
+		cfg.ReqRate = cfg.ReqRate * 1000
+	}
+
+	if cfg.ReqBurst > 0 {
+		/* integer value, 1 corresponds to 0.001 r/s */
+		cfg.ReqBurst = cfg.ReqBurst * 1000
 	}
 	return &cfg, nil
 }
